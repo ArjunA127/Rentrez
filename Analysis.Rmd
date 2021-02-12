@@ -1,0 +1,76 @@
+---
+title: "Biol 343 Wk5 assignment part I - Analysis"
+author: "Arjun Augustine"
+date: "2/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This markdown file takes the *Borrelia burgdorferi* 16S gene sequences from the Sequences.csv file (created from the script Download.R) and creates two tables: one displaying the counts for each nucleotide for each sequencce, and the other other displaying the GC content for each sequence.
+
+**Link to github repository including all files required for this code to run:**
+[repository](https://github.com/ArjunA127/Rentrez)
+
+![*Borrelia burgdorferi* Image](https://upload.wikimedia.org/wikipedia/commons/f/f3/Borrelia_burgdorferi_%28CDC-PHIL_-6631%29_lores.jpg)
+
+[*Borrelia burgdorferi* Wikipedia Page](https://en.wikipedia.org/wiki/Borrelia_burgdorferi)
+
+#### Load Packages:
+```{r message=F}
+library(dplyr)
+library(knitr)
+```
+
+
+#### Import the Sequences.csv file
+```{r}
+sequences <- read.csv("Sequences.csv")
+```
+
+#### Print out each sequence.
+```{r}
+print(sequences$Sequence)
+```
+
+#### Count the number of each base pair (A, T, C and G), in each of the three sequences
+```{r}
+# For each base count I removed all other bases from the sequence and used nchar() to count the number of characters in the remaining string containing only the target base
+bpCounts <- sequences %>% 
+  transmute(Sequence.ID = gsub(">(.*) Borrelia.*", "\\1", Name),
+            A.count = nchar(gsub("[CGT]", "", Sequence)),
+            C.count = nchar(gsub("[AGT]", "", Sequence)),
+            G.count = nchar(gsub("[ACT]", "", Sequence)),
+            T.count = nchar(gsub("[ACG]", "", Sequence)))
+# Print a nice looking table to display bpCounts object
+kable(bpCounts,
+      caption = "Table 1. Number of each base pair B. burgdorferi sequences.", # Table caption
+      col.names = c("Sequence ID", "A", "C", "G", "T"),                        # Column headings
+      align = 'l')                                                             # Left-align the columns
+```
+#### Display the number of nucleotides as a table for each of the three sequences
+```{r}
+ntCounts <- bpCounts %>% transmute(Sequence.ID,
+                                   Nucleotide.count = A.count + C.count + G.count + T.count)
+# Print a nice looking table to display ntCounts object
+kable(ntCounts,
+      caption = "Table 2. Number of nucleotides in each B. burgdorferi sequence.", # Table caption
+      col.names = c("Sequence ID", "Nucleotide Count"),                            # Column headings
+      align = 'l')                                                                 # Left-align the columns
+```
+
+#### Calculate GC Content (% of nucleotides that are G or C) and create a final table showing GC content for each sequence ID
+```{r}
+GCcontent <- bpCounts %>% 
+  transmute(Sequence.ID,
+            GC.content = (G.count + C.count) / (A.count + C.count + G.count + T.count) * 100)
+
+# Print a nice looking table to display GCcontent object
+kable(GCcontent,
+      caption = "Table 3. GC content for B. burgdorferi sequences.", # Table caption
+      col.names = c("Sequence ID", "GC content (%)"),                # Column headings
+      align = 'l')                                                   # Left-align the columns
+```
+
